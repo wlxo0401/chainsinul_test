@@ -145,7 +145,7 @@ while(True):
     msg = data.decode()
 
     # 받은 데이터 확인용
-    print('Received from : ', msg)
+    print('Received Data : ', msg)
 
     # 문자열을 json으로 변환
     data = json.loads(msg)
@@ -156,7 +156,7 @@ while(True):
     clt_data['Name'] = data['Name']
     clt_data['Content'] = data['Content']
     clt_data['Time'] = data['Time']
-    clt_data['Comment'] = "계양역입니다"
+    clt_data['Comment'] = "계양역입니다 1호기"
 
     # json의 구동체인 부분을 타입별로 나눠준다.
     if data["Type"] == "RS":
@@ -175,5 +175,6 @@ while(True):
     
     elif data["Type"] == "Stop":
         break
-print("바이바이")
+
+
 client_socket.close()
