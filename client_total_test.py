@@ -175,5 +175,5 @@ while(True):
     
     elif data["Type"] == "Stop":
         break
- 
+print("바이바이")
 client_socket.close()
