@@ -175,5 +175,5 @@ while(True):
     
     elif data["Type"] == "Stop":
         break
-
+ 
 client_socket.close()
