@@ -23,7 +23,6 @@ def RS_cal_sinul():
     # 구동체인 작동
     print("구동체인...")
     global a 
-    a = chain_main_class()
     a.load_data()
     a.move_graph()
     a.X_trans_time()
@@ -41,7 +40,6 @@ def STEP_cal_sinul():
     # 스텝체인 작동
     print("스텝체인...")
     global chain
-    chain = step_chain()
     chain.Start()    
     print("스텝체인 계산 완료...") 
 
@@ -76,6 +74,20 @@ def Step_Chain():
         STEP_cal_sinul()
         chain.cal_sin()
         clt_data['Data'] = chain.elongation_result[0]
+    # ====================학과 사무실에서 한솔이와 작업한 내용======
+    # 셋데이터 확인과 셋 데이터를 수정하는 코드
+    elif data["Content"] == "Load Spec Setting":
+        Spec = "{} 60 {} {}".format(chain.Fs, chain.link_pitch, chain.chain_velocity)
+        clt_data["Data"] = Spec
+    elif data["Content"] == "Save Spec Setting":
+        SetData = list(data["Data"].split(" "))
+        print(SetData)
+        chain.Fs = SetData[0]
+        chain.link_pitch = SetData[2]
+        chain.chain_velocity = SetData[3]
+        print("{} {} {}".format(chain.Fs,chain.link_pitch,chain.chain_velocity))
+        clt_data["Data"] = "세이브 완료"
+    # =====================================
     elif data["Content"] == "Raw":
         chain.show_graph("row")
         with open("GG.png", "rb") as imageFile:
@@ -106,7 +118,7 @@ print("연결 대기 중")
 # 로컬은 127.0.0.1의 ip로 접속한다.
 print("ip 접속 중")
 try:
-    HOST = '192.168.0.14'
+    HOST = '10.200.73.11'
     print("ip 접속 성공")
 except:
     print("ip 접속 실패")
@@ -133,6 +145,9 @@ try:
 except:
     print("소켓 연결 실패")
 
+# ==== 한솔이와 건든 내용
+a = chain_main_class()
+chain = step_chain()
 
 #===================================================================
 
