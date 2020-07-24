@@ -4,12 +4,12 @@ import math
 from scipy import signal
 import matplotlib.pyplot as plt
 import librosa
-
+plt.ioff() 
 class step_chain:
     # 클래스 초기화
     def __init__(self):
         # 디렉토리와 파일 변수 선언
-        self.directoryname = "C_33_200421_1415_D"
+        self.directoryname = "Data"
         self.filename = "C_33_3802-688-9_200421_1415N_D.raw.txt"
         self.file_full_path = self.directoryname+"/"+ self.filename
         self.out_file_name = self.directoryname+"/"+self.filename[0:30] + "_A.txt"
@@ -146,30 +146,25 @@ class step_chain:
     # 그래프를 이용한 시각화
     def show_graph(self, mode = "autocorrelate"):
         if mode == "row":
+            plt.clf()
             plt.plot(self.iot7_BP)
-            fig = plt.gcf()
-            plt.show()
-            fig.savefig('GG.png')
+            plt.savefig('GG.png')
         elif mode == "bandpass":
-            plt.plot(self.filtered)
-            fig = plt.gcf() 
-            plt.show()
-            fig.savefig('GG.png')
+            plt.clf()
+            plt.plot(self.filtered) 
+            plt.savefig('GG.png')
         elif mode == "autocorrelate":
             plt.plot(self.correlate_result)
             fig = plt.gcf()
-            plt.show()
             fig.savefig('GG.png')
         elif mode == "peak":
-            plt.plot(self.iot7_BP)
-            plt.plot(self.locs, self.k, "x")
-            plt.show()
-            fig = plt.gcf()
-            
-            fig.savefig('GG.png')
+            plt.clf()
+            plt.plot(self.correlate_result)
+            plt.plot(self.row_X, self.k, "x") 
+            plt.savefig('GG.png')
         else:
             print("mode typing error!")
-        plt.show()
+        #plt.show()
 
     # 실행 함수(경로 자동 설정)
     def Start(self):

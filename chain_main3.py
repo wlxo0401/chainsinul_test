@@ -7,6 +7,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 import copy
 import librosa
+plt.ioff()
 # 메인 클래스
 # 데이터를 불러오는 것부터 파일 작성까지 기본적으로 제공된 과정
 # 각 중요 기능별로 구간을 나누어 함수화
@@ -17,7 +18,7 @@ class chain_main_class:
     # 클래스 초기화
     def __init__(self):
         # 디렉토리와 파일 변수 선언
-        self.directoryname = "C_33_200421_1415_D"
+        self.directoryname = "Data"
         self.filename = "C_33_3802-688-9_200421_1415N_D.raw.txt"
         self.file_full_path = self.directoryname+"/"+ self.filename
         self.out_file_name = self.directoryname+"/"+self.filename[0:30] + "_A.txt"
@@ -87,13 +88,15 @@ class chain_main_class:
 
     #밴드 패스 출력
     def print_bandpass(self):
+        plt.clf()
         sos = signal.butter(5, [self.start, self.end], "bp", fs=self.Fs, output="sos")
         filtered = signal.sosfilt(sos, self.iot7_BP)
         plt.plot(filtered)
-
+        plt.savefig('rs_bandpass.png')
     def print_row(self):
+        plt.clf()
         plt.plot(self.iot7_BP)
-
+        plt.savefig('rs_raw.png')
 
 
     # 최소 분산을 구하는 함수
@@ -149,13 +152,14 @@ class chain_main_class:
         self.data = row_data2
         self.iot7_BP = row_data
 
-        if min(variances) > min(variances2):
-            self.start =  start+((variances.index(min(variances))*interval))
-            self.end =  end-((variances.index(min(variances))*interval))
-        else :
-            self.start =  start+((variances2.index(min(variances2))*interval)) 
-            self.end = end-((variances2.index(min(variances2))*interval))
-
+        # if min(variances) > min(variances2):
+        #     self.start =  start+((variances.index(min(variances))*interval))
+        #     self.end =  end-((variances.index(min(variances))*interval))
+        # else :
+        #     self.start =  start+((variances2.index(min(variances2))*interval)) 
+        #     self.end = end-((variances2.index(min(variances2))*interval))
+        self.start = 400
+        self.end = 800
         filtered = self.bandpass(row_data,self.start,self.end,self.Fs)
         self.auto_bandstop(filtered,self.Fs)
 
@@ -189,8 +193,10 @@ class chain_main_class:
         noStop_k = list(filter(lambda x:x !=-1 , temp_k))
 
         # 그래프 출력
+        plt.clf()
         plt.plot(self.result)
         plt.plot(noStop_locs, noStop_k,'x')
+        plt.savefig('rs_peak.png')
         return noStop_locs, noStop_k
 
     def bandstop(self,data,start,end,fs):
@@ -269,7 +275,7 @@ class chain_main_class:
         link_pitch=self.link_pitch*self.link_count
         # 신율 = ((늘어난 길이(mm))/설계치 길이)*100
         self.elongation_result=((elongation-link_pitch)/link_pitch)*100
-        return self.elongation_result
+    
     # 파일 저장
     def save_file(self):
         Length_Link_Row = np.arange(1, self.link_count+1)
@@ -290,6 +296,3 @@ class chain_main_class:
         else:
             fid.write(str(self.elongation_result))
         fid.close()
-    
-
-

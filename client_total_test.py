@@ -15,37 +15,65 @@ import base64
 # json을 위한 임포트
 import json
 from collections import OrderedDict
+plt.ioff() 
 
 
+#신율 계산 작동을 위한 함수
+def RS_cal_sinul():
+    # 구동체인 작동
+    print("구동체인...")
+    global a 
+    a = chain_main_class()
+    a.load_data()
+    a.move_graph()
+    a.X_trans_time()
+
+    #auto_bandpass에 데이터와 검증 주파수 범위, fs를 입력하면 peak_plot까지 자동으로 수행한다.
+    a.auto_bandpass(a,10000,14000,50000)
+    a.peak_interval()
+    a.math()
+    a.sin_length()
+    print("구동체인 계산 완료...")
+
+
+
+def STEP_cal_sinul():
+    # 스텝체인 작동
+    print("스텝체인...")
+    global chain
+    chain = step_chain()
+    chain.Start()    
+    print("스텝체인 계산 완료...") 
 
 # RS 명령이 오면 동작 함수
 def RS_Chain():
     clt_data['Type'] = 'RS'           
     if data['Content'] == 'Peak':
         a.peak_plot()
-        plt.savefig('rs_peak.png')
         with open("rs_peak.png", "rb") as imageFile:
             rs_peak = base64.b64encode(imageFile.read())
             clt_data['Data'] = rs_peak.decode("utf-8")
     elif data['Content'] == 'Raw':
         a.print_row()
-        plt.savefig('rs_raw.png')
         with open("rs_raw.png", "rb") as imageFile:
             rs_raw = base64.b64encode(imageFile.read())
             clt_data['Data'] = rs_raw.decode("utf-8")
-    elif data['Content'] == 'bandpass':
+    elif data['Content'] == 'Bandpass':
         a.print_bandpass()
-        plt.savefig('rs_bandpass.png')
         with open("rs_bandpass.png", "rb") as imageFile:
             rs_bandpass = base64.b64encode(imageFile.read())
             clt_data['Data'] = rs_bandpass.decode("utf-8")
     elif data['Content'] == 'Sin':
-            clt_data['Data'] = a.cal_sin()
+            RS_cal_sinul()
+            a.cal_sin()
+            clt_data['Data'] = a.elongation_result[0]
+    #return clt_data['Data']
 
 # STEP 명령이 오면 동작 함수
 def Step_Chain():
     clt_data['Type'] = 'Step'
     if data["Content"] == "Sin":
+        STEP_cal_sinul()
         chain.cal_sin()
         clt_data['Data'] = chain.elongation_result[0]
     elif data["Content"] == "Raw":
@@ -71,25 +99,6 @@ def Step_Chain():
 
 #===================================================================
 print("실행중...")
-#===================================================================
-# 스텝체인 작동
-print("스텝체인...")
-chain = step_chain()
-chain.Start()
-#===================================================================
-# 구동체인 작동
-print("구동체인...")
-a = chain_main_class()
-a.load_data()
-a.move_graph()
-a.X_trans_time()
-
-#auto_bandpass에 데이터와 검증 주파수 범위, fs를 입력하면 peak_plot까지 자동으로 수행한다.
-a.auto_bandpass(a,10000,14000,50000)
-print("구동체인 완료.")
-#===================================================================
-
-
 #===================================================================
 
 print("연결 대기 중")
@@ -123,8 +132,7 @@ try:
     print("소켓 연결 성공")
 except:
     print("소켓 연결 실패")
-else:
-    print("gg")
+
 
 #===================================================================
 
@@ -143,21 +151,22 @@ while(True):
     data = json.loads(msg)
 
     # 보내기 위한 json 생성
+    global clt_data
     clt_data = OrderedDict()
     clt_data['Name'] = data['Name']
     clt_data['Content'] = data['Content']
     clt_data['Time'] = data['Time']
-    clt_data['Comment'] = data['Comment']
+    clt_data['Comment'] = "계양역입니다"
 
     # json의 구동체인 부분을 타입별로 나눠준다.
     if data["Type"] == "RS":
+        # clt_data['Data'] = RS_Chain(clt_data)
         RS_Chain()
         # json을 스트링으로 바꾼다.
         jsonString = json.dumps(clt_data)
         # 데이터 전송
         client_socket.sendall(jsonString.encode())
-
-    elif data["Type"] == "Step":            
+    elif data["Type"] == "Step":       
         Step_Chain()
         # json을 스트링으로 바꾼다.
         jsonString = json.dumps(clt_data)
