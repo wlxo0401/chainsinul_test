@@ -1,8 +1,6 @@
 # 그래프 찍기
 import matplotlib.pyplot as plt
-# chain_main3 = 구동체인, step_chain = 스텝체인
-from chain_main3 import chain_main_class
-from step_chain import step_chain
+
 # 파이썬 이미지 라이브러리
 from PIL import Image
 # 파이썬 입출력
@@ -15,31 +13,49 @@ import base64
 # json을 위한 임포트
 import json
 from collections import OrderedDict
+# chain_main3 = 구동체인, step_chain = 스텝체인
+from RS_chain import chain_main_class
+from step_chain import step_chain
 plt.ioff() 
 
+# 마이크 관련 모듈
+import testmic2 as mic
+import testwavtxt as wavetxt
 
-#신율 계산 작동을 위한 함수
+# 녹음 시간
+micTime = 60
+
+# 신율 계산 작동을 위한 함수
+# 구동 체인
 def RS_cal_sinul():
-    # 구동체인 작동
     print("구동체인...")
     global a 
+    #a = chain_main_class()
+    print("데이터 로드...")
     a.load_data()
+    print("데이터 영점 이동...")
     a.move_graph()
+    print("시간 축 조절...")
     a.X_trans_time()
+    a.find_peaks()
 
     #auto_bandpass에 데이터와 검증 주파수 범위, fs를 입력하면 peak_plot까지 자동으로 수행한다.
-    a.auto_bandpass(a,10000,14000,50000)
+    #a.auto_bandpass(a,10000,14000,50000)
+    #print("오토 밴드패스...")
+    # 임시용 ========================
+    k = a.bandpass(a.iot7_BP,10000,14000,50000)
+    a.auto_bandstop(k,50000)
+    # ===================
     a.peak_interval()
     a.math()
     a.sin_length()
     print("구동체인 계산 완료...")
 
-
-
+# 스텝 체인
 def STEP_cal_sinul():
-    # 스텝체인 작동
     print("스텝체인...")
     global chain
+    #chain = step_chain()
     chain.Start()    
     print("스텝체인 계산 완료...") 
 
@@ -62,15 +78,35 @@ def RS_Chain():
             rs_bandpass = base64.b64encode(imageFile.read())
             clt_data['Data'] = rs_bandpass.decode("utf-8")
     elif data['Content'] == 'Sin':
+            mic.c_mic()
+            wavetxt.wave_to_txt()
             RS_cal_sinul()
             a.cal_sin()
-            clt_data['Data'] = a.elongation_result[0]
+            clt_data['Data'] = a.elongation_result[0]/100
+    # ====================학과 사무실에서 한솔이와 작업한 내용======
+    # 셋데이터 확인과 셋 데이터를 수정하는 코드
+    elif data["Content"] == "Load Spec Setting":
+        Spec = "{} 60 {} {}".format(a.Fs, a.link_pitch, a.chain_velocity)
+        clt_data["Data"] = Spec
+        print("저장된 스펙 로드")
+    elif data["Content"] == "Save Spec Setting":
+        SetData = list(data["Data"].split(" "))
+        print(SetData)
+        chain.Fs = SetData[0]
+        chain.link_pitch = SetData[2]
+        chain.chain_velocity = SetData[3]
+        print("{} {} {}".format(a.Fs, a.link_pitch, a.chain_velocity))
+        clt_data["Data"] = "세이브 완료"
+        print("스펙 세이브 완료")
+    # =====================================
     #return clt_data['Data']
 
 # STEP 명령이 오면 동작 함수
 def Step_Chain():
     clt_data['Type'] = 'Step'
     if data["Content"] == "Sin":
+        mic.c_mic()
+        wavetxt.wave_to_txt()
         STEP_cal_sinul()
         chain.cal_sin()
         clt_data['Data'] = chain.elongation_result[0]
@@ -79,6 +115,7 @@ def Step_Chain():
     elif data["Content"] == "Load Spec Setting":
         Spec = "{} 60 {} {}".format(chain.Fs, chain.link_pitch, chain.chain_velocity)
         clt_data["Data"] = Spec
+        print("저장된 스펙 로드")
     elif data["Content"] == "Save Spec Setting":
         SetData = list(data["Data"].split(" "))
         print(SetData)
@@ -87,6 +124,7 @@ def Step_Chain():
         chain.chain_velocity = SetData[3]
         print("{} {} {}".format(chain.Fs,chain.link_pitch,chain.chain_velocity))
         clt_data["Data"] = "세이브 완료"
+        print("스펙 세이브 완료")
     # =====================================
     elif data["Content"] == "Raw":
         chain.show_graph("row")
@@ -112,13 +150,10 @@ def Step_Chain():
 #===================================================================
 print("실행중...")
 #===================================================================
-
-print("연결 대기 중")
-
 # 로컬은 127.0.0.1의 ip로 접속한다.
 print("ip 접속 중")
 try:
-    HOST = '10.200.73.11'
+    HOST = '192.168.0.14'
     print("ip 접속 성공")
 except:
     print("ip 접속 실패")
@@ -145,10 +180,9 @@ try:
 except:
     print("소켓 연결 실패")
 
-# ==== 한솔이와 건든 내용
+# ==========================지태
 a = chain_main_class()
 chain = step_chain()
-
 #===================================================================
 
 while(True):
@@ -187,9 +221,5 @@ while(True):
         jsonString = json.dumps(clt_data)
         # 데이터 전송
         client_socket.sendall(jsonString.encode())        
-    
-    elif data["Type"] == "Stop":
-        break
-
 
 client_socket.close()
